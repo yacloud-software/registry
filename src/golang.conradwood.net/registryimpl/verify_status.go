@@ -5,6 +5,7 @@ this checks for the healthz status of registered services and removes them if th
 to answer altogether
 */
 import (
+	"flag"
 	"fmt"
 	reg "golang.conradwood.net/apis/registry"
 	"golang.conradwood.net/go-easyops/http"
@@ -13,17 +14,25 @@ import (
 )
 
 const (
-	WORKERS        = 10
-	CHECK_INTERVAL = 30
+	WORKERS = 10
+
+//	CHECK_INTERVAL = 30
 )
 
 var (
+	keepAlive     = flag.Duration("keepalive", time.Duration(30)*time.Second, "keep alive interval in seconds to check each registered service")
 	healthzChecks = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "registry_total_healthzChecks",
 			Help: "V=1 UNIT=ops DESC=number of healthzchecks",
 		},
 		[]string{"servicename"},
+	)
+	healthzChecksQ = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "registry_healthzChecks_queued",
+			Help: "V=1 UNIT=ops DESC=number of healthzchecks queued for processing",
+		},
 	)
 	failedHealthzChecks = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -36,27 +45,33 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(healthzChecks, failedHealthzChecks)
+	prometheus.MustRegister(healthzChecks, failedHealthzChecks, healthzChecksQ)
+}
+func updateqcounter() {
+	healthzChecksQ.Set(float64(len(verify_chan)))
 }
 func (rv *V2Registry) VerifyStatusLoop() {
 	for i := 0; i < WORKERS; i++ {
 		go rv.verifyStatusWorker()
 	}
 	for {
-		time.Sleep(CHECK_INTERVAL * time.Second)
+		updateqcounter()
+		time.Sleep(*keepAlive)
+		updateqcounter()
 		sl := rv.serviceList
 		if sl == nil {
 			continue
 		}
 		instances := sl.Instances()
 		for _, i := range instances {
+			updateqcounter()
 			// does this expose a 'status'?
 			if !i.IncludesApiType(reg.Apitype_status) {
 				// if not, ignore ig
 				continue
 			}
 			// check synchronously AS WELL as asynchronously in the worker
-			if time.Since(i.lastServiceCheck) < time.Duration(CHECK_INTERVAL)*time.Second {
+			if time.Since(i.lastServiceCheck) < *keepAlive {
 				continue
 			}
 			verify_chan <- &verifyWork{instance: i}
@@ -71,6 +86,7 @@ type verifyWork struct {
 
 func (rv *V2Registry) verifyStatusWorker() {
 	for {
+		updateqcounter()
 		w := <-verify_chan
 		si := w.instance
 		if si == nil {
@@ -80,7 +96,7 @@ func (rv *V2Registry) verifyStatusWorker() {
 		if reg == nil {
 			continue
 		}
-		if time.Since(si.lastServiceCheck) < time.Duration(CHECK_INTERVAL)*time.Second {
+		if time.Since(si.lastServiceCheck) < *keepAlive {
 			continue
 		}
 		si.lastServiceCheck = time.Now()

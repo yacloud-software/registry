@@ -25,10 +25,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"golang.conradwood.net/go-easyops/prometheus"
 	"golang.conradwood.net/apis/common"
 	pb "golang.conradwood.net/apis/registry"
 	"golang.conradwood.net/go-easyops/errors"
+	"golang.conradwood.net/go-easyops/prometheus"
 	"golang.conradwood.net/go-easyops/server"
 	"golang.conradwood.net/go-easyops/utils"
 	"golang.conradwood.net/registryimpl"
@@ -47,7 +47,6 @@ var (
 	debug_match          = flag.Bool("debug_match", false, "Enable debugging for the matching algorithm (LOTS OF LOGS)")
 	port                 = flag.Int("port", 5000, "The server port (non-tls)")
 	tlsport              = flag.Int("tlsport", 5001, "The server port (tls)")
-	keepAlive            = flag.Int("keepalive", 2, "keep alive interval in seconds to check each registered service")
 	max_failures         = flag.Int("max_failures", 10, "max failures after which service will be deregistered")
 	upstream             = flag.String("upstream", "", "the `ip:port` of an upstream registry. \"port\" defaults to 5000. The upstream registry is consulted by this instance of the registry whenever an instance of a service is requested, but not registered on this instance. CAUTION: this can lead to confused developers because instances registered on the upstream registry won't ever contact this instance and thus won't use services registered here.")
 	services             *list.List
