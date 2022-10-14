@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"golang.conradwood.net/go-easyops/errors"
+	"golang.conradwood.net/go-easyops/linux"
 	"golang.conradwood.net/go-easyops/utils"
 	"google.golang.org/grpc/peer"
 	"net"
@@ -144,6 +145,10 @@ func ipchecker() {
 func myip() string {
 	if *localip != "" {
 		return *localip
+	}
+	use_new_code := true
+	if use_new_code {
+		return linux.New().MyIP()
 	}
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {

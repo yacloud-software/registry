@@ -65,7 +65,7 @@ var (
 		},
 		[]string{"servicename", "method"},
 	)
-	forceip    = flag.String("forceip", "", "all services will be exposed at this ip address. (testing only)")
+	//forceip    = flag.String("forceip", "", "all services will be exposed at this ip address. (testing only)")
 	deployPath = "registry/myself"
 	v2server   pb.RegistryServer
 )
