@@ -5,37 +5,38 @@ go 1.18
 replace golang.conradwood.net/registryimpl => ../registryimpl
 
 require (
-	golang.conradwood.net/apis/common v1.1.1900
-	golang.conradwood.net/apis/registry v1.1.1900
-	golang.conradwood.net/go-easyops v0.1.13909
+	golang.conradwood.net/apis/common v1.1.2043
+	golang.conradwood.net/apis/registry v1.1.2043
+	golang.conradwood.net/go-easyops v0.1.14795
 	golang.conradwood.net/registryimpl v0.0.0-00010101000000-000000000000
-	google.golang.org/grpc v1.50.0
+	google.golang.org/grpc v1.51.0
 )
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
-	github.com/prometheus/client_golang v1.13.0 // indirect
-	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.37.0 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/prometheus/client_golang v1.14.0 // indirect
+	github.com/prometheus/client_model v0.3.0 // indirect
+	github.com/prometheus/common v0.38.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
-	golang.conradwood.net/apis/auth v1.1.1900 // indirect
-	golang.conradwood.net/apis/autodeployer v1.1.1900 // indirect
-	golang.conradwood.net/apis/deploymonkey v1.1.1900 // indirect
-	golang.conradwood.net/apis/echoservice v1.1.1900 // indirect
-	golang.conradwood.net/apis/errorlogger v1.1.1900 // indirect
-	golang.conradwood.net/apis/framework v1.1.1900 // indirect
+	golang.conradwood.net/apis/auth v1.1.2043 // indirect
+	golang.conradwood.net/apis/autodeployer v1.1.2043 // indirect
+	golang.conradwood.net/apis/deploymonkey v1.1.2043 // indirect
+	golang.conradwood.net/apis/echoservice v1.1.2043 // indirect
+	golang.conradwood.net/apis/errorlogger v1.1.2043 // indirect
+	golang.conradwood.net/apis/framework v1.1.2043 // indirect
 	golang.conradwood.net/apis/h2gproxy v1.1.1900 // indirect
 	golang.conradwood.net/apis/htmlserver v1.1.1900 // indirect
-	golang.conradwood.net/apis/objectstore v1.1.1900 // indirect
+	golang.conradwood.net/apis/objectstore v1.1.2043 // indirect
 	golang.conradwood.net/apis/promconfig v1.1.1900 // indirect
-	golang.conradwood.net/apis/rpcinterceptor v1.1.1900 // indirect
-	golang.org/x/net v0.0.0-20220921203646-d300de134e69 // indirect
-	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
-	golang.org/x/text v0.3.8 // indirect
+	golang.conradwood.net/apis/rpcinterceptor v1.1.2043 // indirect
+	golang.org/x/net v0.4.0 // indirect
+	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
+	golang.yacloud.eu/apis/urlcacher v1.1.2043 // indirect
 	google.golang.org/genproto v0.0.0-20220921223823-23cae91e6737 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
