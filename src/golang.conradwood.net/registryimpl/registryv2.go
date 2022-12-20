@@ -17,6 +17,7 @@ var (
 	promNameCtrLock sync.Mutex
 	promNameCtr     = 0
 	debug           = flag.Bool("debug_v2", false, "debug v2 code")
+	print_lookups   = flag.Bool("print_lookups", false, "if true, print all lookup requests")
 )
 
 func New(upstream string) *V2Registry {
@@ -84,6 +85,9 @@ func (s *V2Registry) V2GetTarget(ctx context.Context, req *reg.V2GetTargetReques
 	return s.V2getTarget(ctx, req, true, nil)
 }
 func (s *V2Registry) V2getTarget(ctx context.Context, req *reg.V2GetTargetRequest, use_upstream bool, utr *reg.UpstreamTargetRequest) (*reg.V2GetTargetResponse, error) {
+	if *print_lookups {
+		fmt.Printf("gettarget(%s)\n", req.ServiceName)
+	}
 	sl := s.serviceList.FilterByNames(req.ServiceName)
 	sl = sl.FilterByApiType(req.ApiType)
 	res := &reg.V2GetTargetResponse{}
