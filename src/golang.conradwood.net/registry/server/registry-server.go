@@ -94,7 +94,7 @@ func main() {
 	myid = "V1-" + utils.RandomString(96)
 
 	v2server = registryimpl.New(*upstream)
-
+	prometheus.MustRegister(non_tls_grpc_server_requests)
 	go RegisterNonTLS()
 
 	sd := server.NewServerDef()
