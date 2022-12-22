@@ -16,7 +16,7 @@ import (
 var (
 	promNameCtrLock sync.Mutex
 	promNameCtr     = 0
-	debug           = flag.Bool("debug_v2", false, "debug v2 code")
+	debug           = flag.Bool("debug_registry", false, "debug v2 code")
 	print_lookups   = flag.Bool("print_lookups", false, "if true, print all lookup requests")
 )
 
@@ -131,14 +131,11 @@ func (s *V2Registry) V2getTarget(ctx context.Context, req *reg.V2GetTargetReques
 	}
 	//s.Printf("No targets registered for %s - asking upstream\n", req.ServiceName)
 	// if we have no targets ourselves, ask upstream
-	usr := &reg.UpstreamTargetRequest{Request: req, TTL: 10}
-	if utr != nil {
-		usr = utr
-	}
-	upstreamResponses, err := s.getFromUpstream(ctx, usr)
+	upstreamResponses, err := s.get_upstream(ctx, req, utr)
 	if err != nil {
 		s.Printf("Upstream error. (%d responses): %s\n", len(upstreamResponses), err)
 	}
+
 	// take note if we want any of them upstream
 	for _, u := range upstreamResponses {
 		for _, t := range u.Response.Targets {
@@ -161,6 +158,15 @@ func (s *V2Registry) V2getTarget(ctx context.Context, req *reg.V2GetTargetReques
 		}
 	}
 	return res, nil
+}
+func (s *V2Registry) get_upstream(ctx context.Context, req *reg.V2GetTargetRequest, utr *reg.UpstreamTargetRequest) ([]*reg.DownstreamTargetResponse, error) {
+	usr := &reg.UpstreamTargetRequest{Request: req, TTL: 10}
+	if utr != nil {
+		usr = utr
+	}
+	upstreamResponses, err := s.getFromUpstream(ctx, usr)
+	return upstreamResponses, err
+
 }
 func (s *V2Registry) V2DeregisterService(ctx context.Context, req *reg.DeregisterServiceRequest) (*common.Void, error) {
 	sis := s.serviceList.Deregister(ctx, req.ProcessID)

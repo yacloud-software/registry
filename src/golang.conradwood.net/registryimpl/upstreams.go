@@ -5,11 +5,15 @@ import (
 	"fmt"
 	//	"golang.conradwood.net/apis/common"
 	reg "golang.conradwood.net/apis/registry"
+	"golang.conradwood.net/go-easyops/cache"
 	"golang.conradwood.net/go-easyops/client"
+	"strings"
 	"sync"
+	"time"
 )
 
 var (
+	upstream_cache  = cache.New("upstream_cache", time.Duration(15)*time.Second, 1000)
 	NO_UPSTREAM     = []string{"registry.Registry"}
 	upstreamClients = make(map[string]reg.RegistryClient)
 	regLock         sync.Mutex
@@ -56,8 +60,20 @@ func (s *V2Registry) getUpstreamClients() []reg.RegistryClient {
 	return res
 }
 
+type upstream_cache_entry struct {
+	err error
+	res []*reg.DownstreamTargetResponse
+}
+
 // error if _any_ upstream registry is upset. partial results are returned
 func (s *V2Registry) getFromUpstream(ctx context.Context, req *reg.UpstreamTargetRequest) ([]*reg.DownstreamTargetResponse, error) {
+	key := strings.Join(req.Request.ServiceName, "_") + "_" + req.Request.Partition
+	key = key + fmt.Sprintf("_%v", req.Request.ApiType)
+	uceo := upstream_cache.Get(key)
+	if uceo != nil {
+		uce := uceo.(*upstream_cache_entry)
+		return uce.res, uce.err
+	}
 	var fsvc []string
 	for _, svc := range req.Request.ServiceName {
 		add := true
@@ -102,5 +118,6 @@ func (s *V2Registry) getFromUpstream(ctx context.Context, req *reg.UpstreamTarge
 	}
 	wg.Wait()
 	//	s.Printf("Requested data from %d upstream registries.\n", len(cls))
+	upstream_cache.Put(key, &upstream_cache_entry{err: terr, res: res})
 	return res, terr
 }

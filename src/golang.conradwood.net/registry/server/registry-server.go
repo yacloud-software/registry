@@ -43,7 +43,7 @@ var (
 	myid                 string
 	allow_localhost      = flag.Bool("allow_localhost", false, "if true, registrations at localhost will be allowed (and exposed)")
 	callerid             uint64
-	debug                = flag.Bool("debug", false, "Enable debugging")
+	debug                = flag.Bool("debug_old", false, "Enable debugging")
 	debug_match          = flag.Bool("debug_match", false, "Enable debugging for the matching algorithm (LOTS OF LOGS)")
 	port                 = flag.Int("port", 5000, "The server port (non-tls)")
 	tlsport              = flag.Int("tlsport", 5001, "The server port (tls)")
