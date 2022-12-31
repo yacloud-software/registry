@@ -1,0 +1,314 @@
+
+syntax = "proto3";
+
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_outer_classname = "RegistryProto";
+/*
+ do not change the package name
+ rpc clients refer to the service by package name,
+ so if you change this, you need to change ALL clients
+ at the same time
+*/
+package registry;
+option java_package = "net.conradwood.golang.apis.registry";
+import "golang.conradwood.net/apis/common/common.proto";
+import "golang.conradwood.net/apis/auth/auth.proto";
+import "golang.conradwood.net/apis/autodeployer/autodeployer.proto";
+
+enum Apitype {
+  status = 0;
+  grpc = 1;
+  json = 2;
+  html = 3;
+  tcp = 4;
+}
+
+/* some instances have a "special" routing, for example, for certain users only during tests
+ or experiments or so. RoutingInfo defines attributes that can be used by the client loadbalancers
+ to pick a route. It also identifies routes for multiplexers or proxies loadbalancers' to route to remote endpoints.
+ The RoutingInfo is passed for each call in the context metadata
+*/
+message RoutingInfo {
+  // A service might be running under a useraccount instead of a serviceaccount
+  auth.User RunningAs = 1;
+  // We might have multiplexer/proxies, which annoyingly require more than IP:PORT.
+  // This field identifies the (from our perspective) remote node
+  // for example it identifies which dev-server to send it to
+  string GatewayID = 2;
+  // the remote node might expose multiple services, this identifies the Endpoint
+  // (thus it is unique and meaningful on the remote end only)
+  // for example, the dev-server might store something here which is useful for it only
+  string EndpointID = 3;
+  // special tags for this target. Tags are another "routinginfo". A client may request a service with certain tags. If so, any rpc will be routed to a service where all tags match exactly. this happens AFTER user-matching has been performed. That means, the order is: 1. filter for user and 2. filter for tags. If user service has no matching routing tags (but a user service IS running) the call will be rejected with "No Target". This helps in routing within clusters or other special cases
+  map<string,string> Tags=4;
+}
+
+message ServiceDescription {
+  string Name = 1;
+  string Path = 2;
+}
+// on a given port, we can have multiple apis
+message ServiceAddress {
+  string Host = 1;
+  int32 Port = 2;
+  repeated Apitype ApiType = 3;
+  // true if this address is filtered
+  // also see "ShowFiltered" in ListRequest Message
+  bool Filtered = 4;
+  RoutingInfo RoutingInfo = 5;
+}
+
+message ServiceLocation {
+  ServiceDescription Service = 1;
+  repeated ServiceAddress Address = 2;
+}
+
+message GetRequest {
+  ServiceDescription Service = 1;
+}
+message GetResponse {
+  ServiceDescription Service = 1;
+  ServiceLocation Location = 2;
+  string ServiceID = 3;
+  string YourIP = 4; // ip of the client who called this (for matching if one
+                     // wants to find, e.g. the nearest one)
+}
+message ShutdownRequest {
+  string ServiceName = 1;
+}
+message ListResponse {
+  repeated GetResponse Service = 3;
+}
+message EmptyResponse {
+}
+message ListRequest {
+  // optional - if set filter by Name
+  string Name = 1;
+  bool ShowFiltered = 2;
+  // optional - fuzzy filter by multiple names
+  // this is meant to be helpful for Command line applications
+  // idiomatic way: LookupRequest{NameMatches: flag.Args()}
+  repeated string NameMatches = 3;
+}
+
+message DeregisterRequest {
+  string ServiceID = 1;
+}
+
+message GetUpstreamTargetRequest {
+  GetTargetRequest TargetRequest = 2;
+  repeated uint64 Callers = 3;
+}
+message GetTargetRequest {
+  // use either Path or name - not both
+  string Path = 1;
+  string Name = 2;
+  Apitype ApiType = 3;
+}
+
+message ProcessShutdownRequest {
+  // optional, if nil use originators ip
+  string IP = 1;
+  // list all the ports we just shutdown...
+  repeated int32 Port = 2;
+}
+
+message HideUpdateRequest {
+  string IP = 1;
+  bool Enable = 2;
+}
+
+message HideServiceRequest {
+  ServiceAddress Address = 1;
+  // setting this to 0 will effectively remove the hiding again
+  int32 TimeoutSeconds = 2;
+}
+
+message ByIPPortRequest {
+  string Address = 1;
+  uint32 Port = 2;
+  bool ShowFiltered = 3;
+}
+message ByIPPortResponse {
+  ServiceDescription Service = 1;
+  repeated Apitype ApiType = 2;
+  bool Filtered = 3;
+}
+/*********************************************************************************
+ * what follows are "new" V2 style objects. This is very different from previous
+ * registrations conceptually.
+ * old style did not support concepts such as partitions or multiple IPs or
+ * processes
+ */
+
+// new style create service
+// it contains more information and also _should_ be easier to use for clients (more intuitive)
+// this is intented to be sent prior to a registrationrequest from a trusted source (e.g. autodeployer)
+message CreateServiceRequest {
+  /* all registrations of a process must share the same processid (startupid ass assigned by autodeployer)
+   * this way if it exists we clean up all registrations of same process on that host
+   */
+  string ProcessID = 1;
+  // this is mandatory in the datacenter, but optional on "test" clients
+  autodeployer.DeployInfo DeployInfo = 2;
+  // experimental idea - different partitions to isolate services from each other?
+  // e.g. for different organisations or different users?
+  // maybe a "Domain"? (but that is soooo WindowsNT)
+  string Partition = 3;
+  // pid of the process.
+  uint64 Pid = 4;
+}
+
+// new style create service
+// it contains more information and also _should_ be easier to use for clients (more intuitive)
+message RegisterServiceRequest {
+  /* all registrations of a process must share the same processid (startupid ass assigned by autodeployer)
+   * this way if it exists we clean up all registrations of same process on that host
+   * on "test" clients, this is usally locally generated, but every registration of the same process must have
+   * the same ProcessID (e.g. an ge_instance_id)
+   */
+  string ProcessID = 1;
+  // the port we are registering
+  uint32 Port = 2;
+  // the apitypes available on this port
+  repeated Apitype ApiType = 3;
+  // the service name, e.g. "helloworld.HelloWorld"
+  string ServiceName = 4;
+  // optional routinginfo
+  // the registry largely ignores this. the client loadbalancer needs this though
+  RoutingInfo RoutingInfo = 5;
+  uint64 Pid = 6; // process pid. Posix is int32, but some vagueness of signedness, thus safe is uint64
+}
+
+// nothing here really.
+message RegisterServiceResponse {
+}
+
+// the process is still alive..
+message HeartBeatRequest {
+  /* all registrations of a process must share the same processid (startupid ass assigned by autodeployer)
+   * this way if it exists we clean up all registrations of same process on that host
+   * the client is supposed to call this regularly
+   */
+  string ProcessID = 1;
+}
+message DeregisterServiceRequest {
+  /* all registrations of a process must share the same processid (startupid ass assigned by autodeployer)
+   * this way if it exists we clean up all registrations of same process on that host
+   */
+  string ProcessID = 1;
+}
+
+message Target {
+  string ServiceName = 1;
+  string IP = 2;
+  uint32 Port = 3;
+  // all supported apitypes on this target
+  repeated Apitype ApiType = 4;
+  RoutingInfo RoutingInfo = 5;
+  // the partition this service is in
+  string Partition = 6;
+}
+
+message V2GetTargetRequest {
+  // which apitype are we after?
+  Apitype ApiType = 1;
+  /*
+   which services are we after?
+   Note that one cannot query for multiple apitypes in one go. use multiple calls to do so
+  */
+  repeated string ServiceName = 2;
+  /*
+  going with the experimental "Partition" Idea in create service we can query for different partitions.
+  limited by some user account lookup/match
+  */
+  string Partition = 3;
+  /*
+   if true it will ignore the partition on match and return services from all partitions
+   (privileged)
+  */
+  bool AllPartitions = 4;
+}
+message V2GetTargetResponse {
+  repeated Target Targets = 1;
+}
+
+// a more complete view than just Target. useful for listing
+message Registration {
+  Target Target = 1;
+  // is this served as a target at the moment?
+  bool Targetable = 2;
+  string ProcessID = 3;
+  autodeployer.DeployInfo DeployInfo = 4;
+  uint64 Pid = 5;
+  // unix epoch when the service last sent a heartbeat or registration
+  uint32 LastRefreshed = 6;
+  // if it is in a partition, then this will be set
+  string Partition = 7;
+  // deregistered services might still show up for a short while but then they are no longer 'running'
+  bool Running = 8;
+}
+
+message RegistrationList {
+  repeated Registration Registrations = 1;
+}
+message V2ListRequest {
+  string NameMatch = 1; // if non empty only list services matching that name
+}
+
+message DownstreamTargetResponse {
+  V2GetTargetResponse Response = 1;
+  // each registry adds all registry ids to the response
+  repeated string RegistryIDs = 2;
+}
+message UpstreamTargetRequest {
+  V2GetTargetRequest Request = 1;
+  // each registry adds its ID to this list
+  // to avoid loops, if a registry finds itself in here it does not contact any upstreams
+  // and returns an empty list instead
+  repeated string RegistryIDs = 2;
+  // each registry decrements by one. if 0, registry won't ask upstream
+  uint32 TTL = 3;
+}
+
+message MissedLookup {
+  string ServiceName = 1;
+  uint32 Last = 2;
+  uint32 Missed = 3;
+  uint32 Found = 4;
+}
+
+message MissedLookupList {
+  repeated MissedLookup Lookups = 1;
+}
+
+service Registry {
+  // DEPRECATED get all instances of a service
+  rpc GetTarget(GetTargetRequest) returns (ListResponse);
+
+  // this is called, by the autodeployer if it detects a shutdown process
+  // essentially the ports and ip will be deregistered
+  rpc InformProcessShutdown(ProcessShutdownRequest) returns (EmptyResponse);
+  // autodeployer will a service before handing over control to userspace (using processid)
+  rpc V2CreateService(CreateServiceRequest) returns (common.Void);
+  // new style registration
+  rpc V2RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse);
+  // new style 'refresh' (keep-alive)
+  rpc V2HeartBeat(HeartBeatRequest) returns (common.Void);
+  // new style 'deregister' service. This is based on processID. all services/ports for
+  // the given processid will be deregistered.
+  rpc V2DeregisterService(DeregisterServiceRequest) returns (common.Void);
+  // new style queries. this will give us specific services, e.g. only the latest instance
+  // or "the right instance" - whatever that might turn out to be. It won't for example
+  // give instances that are scheduled for shutdown or so.
+  rpc V2GetTarget(V2GetTargetRequest) returns (V2GetTargetResponse);
+  // admin stuff to look at what is registered and to create graphs and whatnot for it
+  // this gives all registrations
+  rpc ListRegistrations(V2ListRequest) returns (RegistrationList);
+  // registry-to-registry target resolutions.
+  // a registry calls this rpc on a remote registry with the request to resolve a target
+  rpc RequestForTarget(UpstreamTargetRequest) returns (DownstreamTargetResponse);
+  // get me list of missed (local) target (those pulled from upstream)
+  rpc GetMissedLookups(common.Void) returns (MissedLookupList);
+}
