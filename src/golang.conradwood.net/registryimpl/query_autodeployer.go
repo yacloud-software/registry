@@ -6,8 +6,8 @@ import (
 	"fmt"
 	ad "golang.conradwood.net/apis/autodeployer"
 	reg "golang.conradwood.net/apis/registry"
+	"golang.conradwood.net/go-easyops/authremote"
 	"golang.conradwood.net/go-easyops/client"
-	"golang.conradwood.net/go-easyops/tokens"
 	"golang.conradwood.net/go-easyops/utils"
 	"google.golang.org/grpc"
 	"sync"
@@ -40,7 +40,7 @@ func (s *V2Registry) queryAutodeployer(ctx context.Context, si *serviceInstance)
 	if time.Since(adc.failed) < time.Duration(5)*time.Minute {
 		return nil
 	}
-	ctx = tokens.ContextWithToken()
+	ctx = authremote.Context()
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(4)*time.Second)
 	defer cancel()
 	des, err := adc.adc.GetDeployments(ctx, &ad.InfoRequest{})

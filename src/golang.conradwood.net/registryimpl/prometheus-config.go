@@ -5,7 +5,7 @@ import (
 	"fmt"
 	prom "golang.conradwood.net/apis/promconfig"
 	reg "golang.conradwood.net/apis/registry"
-	"golang.conradwood.net/go-easyops/tokens"
+	"golang.conradwood.net/go-easyops/authremote"
 	"time"
 )
 
@@ -71,7 +71,7 @@ func (s *V2Registry) rebuildPrometheus(must bool) error {
 		t := &prom.Target{Name: k, Addresses: v}
 		tl.Targets = append(tl.Targets, t)
 	}
-	ctx := tokens.ContextWithToken()
+	ctx := authremote.Context()
 	_, err := promClient.NewTargets(ctx, tl)
 	if err != nil {
 		return err
