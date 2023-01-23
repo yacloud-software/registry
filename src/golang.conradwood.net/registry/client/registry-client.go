@@ -7,8 +7,8 @@ import (
 	"golang.conradwood.net/apis/common"
 	pb "golang.conradwood.net/apis/registry"
 	"golang.conradwood.net/go-easyops/auth"
+	"golang.conradwood.net/go-easyops/authremote"
 	"golang.conradwood.net/go-easyops/client"
-	"golang.conradwood.net/go-easyops/tokens"
 	"golang.conradwood.net/go-easyops/utils"
 	"os"
 	"time"
@@ -53,7 +53,7 @@ func main() {
 	printList(resp)
 }
 func showMissed() {
-	ctx := tokens.ContextWithToken()
+	ctx := authremote.Context()
 	ml, err := rclient.GetMissedLookups(ctx, &common.Void{})
 	utils.Bail("Failed to get lookups", err)
 	for _, l := range ml.Lookups {
