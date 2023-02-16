@@ -7,8 +7,8 @@ require (
 	golang.conradwood.net/apis/common v1.1.2147
 	golang.conradwood.net/apis/promconfig v1.1.2147
 	golang.conradwood.net/apis/registry v1.1.2147
-	golang.conradwood.net/go-easyops v0.1.16334
-	google.golang.org/grpc v1.52.0
+	golang.conradwood.net/go-easyops v0.1.16486
+	google.golang.org/grpc v1.53.0
 )
 
 require (
@@ -29,10 +29,10 @@ require (
 	golang.conradwood.net/apis/htmlserver v1.1.2147 // indirect
 	golang.conradwood.net/apis/objectstore v1.1.2147 // indirect
 	golang.conradwood.net/apis/rpcinterceptor v1.1.2147 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.yacloud.eu/apis/urlcacher v1.1.2147 // indirect
-	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
+	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
