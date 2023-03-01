@@ -16,7 +16,7 @@ import (
 const (
 	WORKERS = 10
 
-//	CHECK_INTERVAL = 30
+// CHECK_INTERVAL = 30
 )
 
 var (
@@ -27,6 +27,13 @@ var (
 			Help: "V=1 UNIT=ops DESC=number of healthzchecks",
 		},
 		[]string{"servicename"},
+	)
+	healthzChecksCur = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "registry_cur_failed_healthzCheck",
+			Help: "V=1 UNIT=ops DESC=current number of failed healthchecks",
+		},
+		[]string{"servicename", "instance"},
 	)
 	healthzChecksQ = prometheus.NewGauge(
 		prometheus.GaugeOpts{
@@ -45,7 +52,7 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(healthzChecks, failedHealthzChecks, healthzChecksQ)
+	prometheus.MustRegister(healthzChecks, failedHealthzChecks, healthzChecksQ, healthzChecksCur)
 }
 func updateqcounter() {
 	healthzChecksQ.Set(float64(len(verify_chan)))
@@ -113,7 +120,7 @@ func (rv *V2Registry) verifyStatusWorker() {
 			}
 			if hr.Error() != nil {
 				failedHealthzChecks.With(l).Inc()
-				si.serviceCheckFailures++
+				setServiceCheckFailure(si, si.serviceCheckFailures+1)
 				fmt.Printf("%d Failure (#%d) %s: %s\n", hr.HTTPCode(), si.serviceCheckFailures, hr.FinalURL(), hr.Error())
 			}
 			si.lastServiceCheck = time.Now()
@@ -122,10 +129,19 @@ func (rv *V2Registry) verifyStatusWorker() {
 		b := string(hr.Body())
 		//	fmt.Printf("Body: \"%s\"\n", b)
 		if b == "OK" {
-			si.serviceCheckFailures = 0
+			setServiceCheckFailure(si, 0)
 		} else {
-			si.serviceCheckFailures++
+			setServiceCheckFailure(si, si.serviceCheckFailures+1)
 		}
 		si.lastServiceCheck = time.Now()
 	}
+}
+func setServiceCheckFailure(si *serviceInstance, newvalue int) {
+	si.serviceCheckFailures = newvalue
+	reg := si.registeredAs
+	l := prometheus.Labels{
+		"servicename": reg.ServiceName,
+		"instance":    fmt.Sprintf("%s:%d", si.IP, reg.Port),
+	}
+	healthzChecksCur.With(l).Set(float64(newvalue))
 }
