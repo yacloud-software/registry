@@ -141,7 +141,7 @@ func setServiceCheckFailure(si *serviceInstance, newvalue int) {
 	reg := si.registeredAs
 	l := prometheus.Labels{
 		"servicename": reg.ServiceName,
-		"instance":    fmt.Sprintf("%s:%d", si.IP, reg.Port),
+		"instance":    fmt.Sprintf("%s:%d", si.IP.ExposeAs(), reg.Port),
 	}
 	healthzChecksCur.With(l).Set(float64(newvalue))
 }
