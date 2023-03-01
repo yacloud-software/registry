@@ -33,7 +33,7 @@ var (
 			Name: "registry_cur_failed_healthzCheck",
 			Help: "V=1 UNIT=ops DESC=current number of failed healthchecks",
 		},
-		[]string{"servicename", "instance"},
+		[]string{"servicename", "serviceinstance"},
 	)
 	healthzChecksQ = prometheus.NewGauge(
 		prometheus.GaugeOpts{
@@ -140,8 +140,8 @@ func setServiceCheckFailure(si *serviceInstance, newvalue int) {
 	si.serviceCheckFailures = newvalue
 	reg := si.registeredAs
 	l := prometheus.Labels{
-		"servicename": reg.ServiceName,
-		"instance":    fmt.Sprintf("%s:%d", si.IP.ExposeAs(), reg.Port),
+		"servicename":     reg.ServiceName,
+		"serviceinstance": fmt.Sprintf("%s:%d", si.IP.ExposeAs(), reg.Port),
 	}
 	healthzChecksCur.With(l).Set(float64(newvalue))
 }
