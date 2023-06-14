@@ -2,12 +2,15 @@ package registryimpl
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"golang.conradwood.net/apis/common"
 	reg "golang.conradwood.net/apis/registry"
 	"time"
 )
 
 var (
+	report_missed = flag.Bool("report_missed_lookups", false, "if true print all lookups without result")
 	missedLookups []*missedLookup
 )
 
@@ -28,6 +31,9 @@ func reportMissedLookup(serviceName string) {
 	}
 	m := &missedLookup{serviceName: serviceName, last: time.Now()}
 	missedLookups = append(missedLookups, m)
+	if *report_missed {
+		fmt.Printf("Missed lookup: %s\n", serviceName)
+	}
 }
 func reportFoundUpstream(serviceName string) {
 	for _, m := range missedLookups {
