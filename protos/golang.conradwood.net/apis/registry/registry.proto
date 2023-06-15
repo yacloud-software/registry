@@ -180,6 +180,7 @@ message RegisterServiceRequest {
   // the registry largely ignores this. the client loadbalancer needs this though
   RoutingInfo RoutingInfo = 5;
   uint64 Pid = 6; // process pid. Posix is int32, but some vagueness of signedness, thus safe is uint64
+  string UserID=7; // the "userid" mapped from auth (maybe "", e.g. if the auth-service itself registers)
 }
 
 // nothing here really.
@@ -249,6 +250,8 @@ message Registration {
   string Partition = 7;
   // deregistered services might still show up for a short while but then they are no longer 'running'
   bool Running = 8;
+  // the "userid" from auth for this service (maybe ""). informational purposes only, this information is reported by the service and trusted 'as-is'
+  string UserID=9;
 }
 
 message RegistrationList {
