@@ -145,6 +145,7 @@ func (si *serviceInstance) Registration() *reg.Registration {
 	ras := si.registeredAs
 	if ras != nil {
 		r.ProcessID = ras.ProcessID
+		r.UserID = ras.UserID
 	}
 
 	if csr != nil {

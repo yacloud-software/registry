@@ -132,13 +132,14 @@ func printList(list *pb.RegistrationList) {
 				ris = ris + fmt.Sprintf(" Tags: %v", t.RoutingInfo.Tags)
 			}
 		}
+		svcid := r.UserID
 		flags := flagsFromRegistration(r)
 		details := getDetailString(r)
 		di := getDeployString(r)
 		if *iponly {
 			fmt.Printf("%s\n", ipport)
 		} else {
-			fmt.Printf("%s "+lg+" %20s %15s %6d %s%s%s\n", flags, t.ServiceName, ipport, apitypes, r.Pid, details, ris, di)
+			fmt.Printf("%s "+lg+" %20s %5s %15s %6d %s%s%s\n", flags, t.ServiceName, svcid, ipport, apitypes, r.Pid, details, ris, di)
 		}
 	}
 	fmt.Println()

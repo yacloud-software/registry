@@ -42,3 +42,5 @@ require (
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 )
+
+replace golang.conradwood.net/apis/registry => ../apis/registry
