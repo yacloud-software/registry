@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	targetable_timeout = flag.Int("refresh_timeout", 60, "timeout in `seconds` after which a registration becomes stale and will not be offered as target any more")
-	instancesequence   = uint64(1)
-	instanceModifyLock sync.Mutex // locking when we modify instances
-	infoLock           sync.Mutex
+	do_dump_servicelist = flag.Bool("dump_service_list", false, "if true, dump the entire service list sometimes. lots of debug")
+	targetable_timeout  = flag.Int("refresh_timeout", 60, "timeout in `seconds` after which a registration becomes stale and will not be offered as target any more")
+	instancesequence    = uint64(1)
+	instanceModifyLock  sync.Mutex // locking when we modify instances
+	infoLock            sync.Mutex
 )
 
 type ServiceList struct {
@@ -45,6 +46,10 @@ type serviceInstance struct {
 	didQueryAutodeployer bool
 	serviceCheckFailures int
 	lastServiceCheck     time.Time
+}
+
+func (si *serviceInstance) String() string {
+	return fmt.Sprintf("[seq=%d,ip=%s,pid=%d]", si.sequencenumber, si.IP.String(), si.pid)
 }
 
 func (si *serviceInstance) IncludesApiType(apitype reg.Apitype) bool {
@@ -193,6 +198,7 @@ func (s *ServiceList) AddFallbackWithHost(Name string, host string, port uint32)
 	}
 	si.IP = IPFromLiteralString(host)
 	s.instances = append(s.instances, si)
+	s.dump("After Addfallbackwithhost:")
 }
 
 // a fallback is a service which is _only_ served as long as there are no
@@ -212,6 +218,7 @@ func (s *ServiceList) AddFallback(Name string, port uint32) {
 	}
 	si.IP = IPLocal()
 	s.instances = append(s.instances, si)
+	s.dump("After Addfallback:")
 }
 func (s *ServiceList) AddRemoteWithHost(Name string, host string, port uint32) {
 	si := &serviceInstance{
@@ -228,8 +235,10 @@ func (s *ServiceList) AddRemoteWithHost(Name string, host string, port uint32) {
 	}
 	si.IP = IPFromLiteralString(host)
 	s.instances = append(s.instances, si)
+	s.dump("After Addremotewithhost:")
 }
 func (s *ServiceList) AddLocal(Name string, port uint32) {
+	s.debugf(debugnd(Name), "adding local instance %s at port %d\n", Name, port)
 	si := &serviceInstance{
 		list:           s,
 		isLocal:        true,
@@ -244,6 +253,7 @@ func (s *ServiceList) AddLocal(Name string, port uint32) {
 	}
 	si.IP = IPLocal()
 	s.instances = append(s.instances, si)
+	s.dump("After addlocal:")
 }
 
 func (s *ServiceList) Instances() []*serviceInstance {
@@ -271,7 +281,7 @@ func (s *ServiceList) TargetableInstances() []*serviceInstance {
 
 // autodeployer send us a thing
 func (s *ServiceList) Create(ctx context.Context, req *reg.CreateServiceRequest) error {
-	s.Printf("Create service processid=%s (got deployinfo: %v)\n", req.ProcessID, (req.DeployInfo != nil))
+	s.debugf(debugnd("none"), "Create service processid=%s (got deployinfo: %v)\n", req.ProcessID, (req.DeployInfo != nil))
 	ip, err := IPFromContext(ctx)
 	if err != nil {
 		return err
@@ -290,6 +300,7 @@ func (s *ServiceList) Create(ctx context.Context, req *reg.CreateServiceRequest)
 		lastUsed:  time.Now(),
 	}
 	s.services[req.ProcessID] = si
+	s.dump("After create:")
 	return nil
 }
 
@@ -299,7 +310,7 @@ func (s *ServiceList) Registration(ctx context.Context, req *reg.RegisterService
 	if req.ProcessID == "" {
 		return nil, false, errors.InvalidArgs(ctx, "missing processid", "missing processid for \"%s\" (pid=%d)", req.ServiceName, req.Pid)
 	}
-	s.Printf("Refreshing %s with processid \"%s\"\n", req.ServiceName, req.ProcessID)
+	s.debugf(req, "Refreshing %s with processid \"%s\"\n", req.ServiceName, req.ProcessID)
 	if req.ServiceName == "" {
 		return nil, false, errors.InvalidArgs(ctx, "missing servicename", "missing servicename")
 	}
@@ -313,11 +324,12 @@ func (s *ServiceList) Registration(ctx context.Context, req *reg.RegisterService
 	}
 	si := s.findExisting(req, ip)
 	if si != nil {
-		s.Printf("Refreshed #%d (%s)\n", si.sequencenumber, si.ServiceName())
+		s.debugf(req, "Refreshed #%d (%s)\n", si.sequencenumber, si.ServiceName())
 		si.registeredAs = req
 		s.refreshAllWithProcessID(req.ProcessID)
 		return si, false, nil
 	}
+	s.debugf(req, "Refreshed processid (%s) - new service instance\n", req.ProcessID)
 	si = &serviceInstance{list: s, pid: req.Pid, sequencenumber: sequence(), refreshed: time.Now()}
 	si.registeredAs = req
 	si.IP = ip
@@ -329,7 +341,8 @@ func (s *ServiceList) Registration(ctx context.Context, req *reg.RegisterService
 		}
 	}
 	s.refreshAllWithProcessID(req.ProcessID)
-	s.Printf("Registered #%d (%s)\n", si.sequencenumber, si.ServiceName())
+	s.debugf(req, "Registered #%d (%s)\n", si.sequencenumber, si.ServiceName())
+	s.dump("After registration:")
 	return si, true, nil
 }
 func (s *ServiceList) refreshAllWithProcessID(procid string) {
@@ -347,20 +360,26 @@ func (s *ServiceList) findExisting(req *reg.RegisterServiceRequest, ip IP) *serv
 	// find by processid
 	servicename := req.ServiceName
 	port := req.Port
+	procid := req.ProcessID
 	for _, si := range s.instances {
 		ras := si.registeredAs
 		if ras != nil && ras.ProcessID != req.ProcessID {
+			s.debugf(req, "processid %s does not match %s (processid mismatch \"%s\" != \"%s\")\n", procid, si.String(), req.ProcessID, ras.ProcessID)
 			continue
 		}
 		if si.ServiceName() != servicename {
+			s.debugf(req, "processid %s does not match %s (servicename mismatch)\n", procid, si.String())
 			continue
 		}
 		if !si.IP.Equals(ip) {
+			s.debugf(req, "processid %s does not match %s (ip mismatch)\n", procid, si.String())
 			continue
 		}
 		if si.Port() != port {
+			s.debugf(req, "processid %s does not match %s (port mismatch (%d != %d))\n", procid, si.String(), si.Port(), port)
 			continue
 		}
+		s.debugf(req, "found: %s\n", si.String())
 		return si
 	}
 
@@ -375,14 +394,16 @@ func (s *ServiceList) findExisting(req *reg.RegisterServiceRequest, ip IP) *serv
 		if si.Port() != port {
 			continue
 		}
+		s.debugf(req, "found: %s\n", si.String())
 		return si
 	}
+	s.debugf(req, "no instance found\n")
 	return nil
 }
 
 // returns all service instances which were deregistered.
 func (s *ServiceList) Deregister(ctx context.Context, processid string) []*serviceInstance {
-	s.Printf("Deregistering processpid \"%s\"\n", processid)
+	s.debugf(debugnd("dereg"), "Deregistering processpid \"%s\"\n", processid)
 	var res []*serviceInstance
 	instanceModifyLock.Lock()
 	defer instanceModifyLock.Unlock()
@@ -404,13 +425,14 @@ func (s *ServiceList) Deregister(ctx context.Context, processid string) []*servi
 
 // old v1 style compatibility - remove ip / port (instead of processpid)
 func (s *ServiceList) removeIPPort(ip IP, port uint32) {
-	s.Printf("Request to deregister service @%s:%d\n", ip.ExposeAs(), port)
+	nd := debugnd("removeipport")
+	s.debugf(nd, "Request to deregister service @%s:%d\n", ip.ExposeAs(), port)
 	instanceModifyLock.Lock()
 	defer instanceModifyLock.Unlock()
 	var newi []*serviceInstance
 	for _, si := range s.instances {
 		if si.Port() == port && si.IP.Equals(ip) {
-			s.Printf("IP/Port based removal of service %s@%s:%d\n", si.ServiceName(), ip.ExposeAs(), port)
+			s.debugf(nd, "IP/Port based removal of service %s@%s:%d\n", si.ServiceName(), ip.ExposeAs(), port)
 			continue
 		}
 		newi = append(newi, si)
@@ -481,10 +503,67 @@ func (rv *V2Registry) clean() {
 	}
 }
 
-func (s *ServiceList) Printf(format string, args ...interface{}) {
+func (s *ServiceList) debugf(d debugif, format string, args ...interface{}) {
 	if !*debug {
 		return
 	}
-	txt := "[v2 servicelist] "
-	fmt.Printf(txt+format, args...)
+	for _, n := range nond {
+		if d.GetServiceName() == n {
+			return
+		}
+	}
+	txt := fmt.Sprintf("[v2 servicelist %s] ", d.GetServiceName())
+	ftxt := fmt.Sprintf(format, args...)
+	fmt.Print(txt + ftxt)
+}
+
+func (s *ServiceList) dump(txt string) {
+	if !*do_dump_servicelist {
+		return
+	}
+	fmt.Printf("BEGIN SERVICELIST ------- %s ----------- \n", txt)
+	fmt.Printf("Instances:\n")
+	for _, i := range s.instances {
+		fmt.Printf("   %s", i.LongString())
+		fmt.Printf("   %#v\n", i.Registration())
+	}
+	fmt.Printf("Services:\n")
+	for k, v := range s.services {
+		fmt.Printf("   %s: %s", k, v.LongString())
+	}
+	fmt.Printf("END SERVICELIST ------- %s ----------- \n", txt)
+}
+func (si *serviceInstance) LongString() string {
+	ca := si.createdAs
+	cr := "none"
+	if ca != nil {
+		di := ca.DeployInfo
+		cr = fmt.Sprintf("{processid: %s, Binary: %s, deploymentid: %s}", ca.ProcessID, di.Binary, di.DeploymentID)
+	}
+
+	ra := si.registeredAs
+	rr := "none"
+	if ra != nil {
+		rr = fmt.Sprintf("{processid: %s, Port: %d, ServiceName: %s, Pid:%d, user: %s", ra.ProcessID, ra.Port, ra.ServiceName, ra.Pid, ra.UserID)
+	}
+
+	n := "none"
+	if si.registeredAs != nil {
+		n = si.registeredAs.ServiceName
+	}
+	s := fmt.Sprintf("Name=%s, IP=%v,local=%v,fallback=%v,remote=%v,queried=%v,failures=%d\n", n, si.IP, si.isLocal, si.isFallback, si.isRemote, si.didQueryAutodeployer, si.serviceCheckFailures)
+	s = s + fmt.Sprintf("      createdas=%s\n", cr)
+	s = s + fmt.Sprintf("      registeredas=%s\n", rr)
+	return s
+}
+func (si *serviceInfo) LongString() string {
+	cr := "none"
+	ca := si.createdAs
+	if ca != nil {
+		di := ca.DeployInfo
+		cr = fmt.Sprintf("{processid: %s, Binary: %s, deploymentid: %s}", ca.ProcessID, di.Binary, di.DeploymentID)
+	}
+	s := fmt.Sprintf("Created=%s, ip=%v, lastused=%s\n", utils.TimeString(si.created), si.ip, utils.TimeString(si.lastUsed))
+	s = s + fmt.Sprintf("     createdAs=%s\n", cr)
+	return s
 }

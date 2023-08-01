@@ -154,14 +154,17 @@ func printList(list *pb.RegistrationList) {
 	}
 }
 func getDeployString(r *pb.Registration) string {
-	if r.DeployInfo == nil || r.DeployInfo.AppReference == nil {
-		return ""
+	if r.DeployInfo == nil {
+		return "nodeployinfo"
+	}
+	if r.DeployInfo.AppReference == nil {
+		return "noappref"
 	}
 	d := r.DeployInfo
 	ar := d.AppReference
 	ad := ar.AppDef
 	if ad == nil {
-		return ""
+		return "noappdef"
 	}
 	return fmt.Sprintf(" (Did:%s V:%d)", d.DeploymentID, d.BuildID)
 }

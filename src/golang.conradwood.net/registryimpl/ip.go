@@ -54,6 +54,9 @@ type IP struct {
 func IPLocal() IP {
 	return IP{loopback: true}
 }
+func (i *IP) String() string {
+	return i.literal
+}
 
 // no check whatsoever!
 func IPFromLiteralString(ip string) IP {

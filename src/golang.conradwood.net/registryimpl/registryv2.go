@@ -14,6 +14,10 @@ import (
 )
 
 var (
+	nond = []string{ // do not print debug info for these services
+		"quickdev.QuickDevService",
+		"autodeployer.AutoDeployer",
+	}
 	promNameCtrLock sync.Mutex
 	promNameCtr     = 0
 	debug           = flag.Bool("debug_registry", false, "debug v2 code")
@@ -188,6 +192,7 @@ func (s *V2Registry) V2HeartBeat(ctx context.Context, req *reg.HeartBeatRequest)
 	return nil, errors.NotImplemented(ctx, "V2HeartBeat")
 }
 func (s *V2Registry) V2CreateService(ctx context.Context, req *reg.CreateServiceRequest) (*common.Void, error) {
+	debugf(debugnd(req.DeployInfo.Binary), "V2CreateService request received , processid \"%s\"\n", req.ProcessID)
 	err := s.serviceList.Create(ctx, req)
 	if err != nil {
 		return nil, err
@@ -195,12 +200,13 @@ func (s *V2Registry) V2CreateService(ctx context.Context, req *reg.CreateService
 	return &common.Void{}, nil
 }
 func (s *V2Registry) V2RegisterService(ctx context.Context, req *reg.RegisterServiceRequest) (*reg.RegisterServiceResponse, error) {
+	debugf(req, "V2RegisterService request received %s, processid \"%s\"\n", req.ServiceName, req.ProcessID)
 	si, isnew, err := s.serviceList.Registration(ctx, req)
 	if err != nil {
 		fmt.Printf("Failed to register: %s\n", utils.ErrorString(err))
 		return nil, err
 	}
-
+	debugf(req, "RegisterService processid %s, isnew: %v\n", req.ProcessID, isnew)
 	if si.createdAs == nil && !si.didQueryAutodeployer {
 		// maybe we just restarted. so we get lots of registrations without create-service.
 		// we try to contact the autodeployer at the host for more information
@@ -284,4 +290,32 @@ func isDefaultRoute(t *reg.RoutingInfo) bool {
 		return true
 	}
 	return false
+}
+
+type debugif interface {
+	GetServiceName() string
+}
+type debugifs struct {
+	name string
+}
+
+func (d *debugifs) GetServiceName() string {
+	return d.name
+}
+func debugnd(name string) debugif {
+	return &debugifs{name: name}
+}
+
+func debugf(d debugif, format string, args ...interface{}) {
+	if !*debug {
+		return
+	}
+	for _, n := range nond {
+		if d.GetServiceName() == n {
+			return
+		}
+	}
+	txt := fmt.Sprintf("[v2 registry %s] ", d.GetServiceName())
+	ftxt := fmt.Sprintf(format, args...)
+	fmt.Print(txt + ftxt)
 }
