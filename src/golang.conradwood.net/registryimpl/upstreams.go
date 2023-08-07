@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	//	"golang.conradwood.net/apis/common"
+	"flag"
 	reg "golang.conradwood.net/apis/registry"
 	"golang.conradwood.net/go-easyops/cache"
 	"golang.conradwood.net/go-easyops/client"
@@ -15,6 +16,7 @@ import (
 var (
 	upstream_cache  = cache.New("upstream_cache", time.Duration(15)*time.Second, 1000)
 	NO_UPSTREAM     = []string{"registry.Registry"}
+	no_upstream     = flag.String("no_upstream", "", "comma delimited list of services never to resolve via upstream regi1stry")
 	upstreamClients = make(map[string]reg.RegistryClient)
 	regLock         sync.Mutex
 	connectingip    string
@@ -67,6 +69,7 @@ type upstream_cache_entry struct {
 
 // error if _any_ upstream registry is upset. partial results are returned
 func (s *V2Registry) getFromUpstream(ctx context.Context, req *reg.UpstreamTargetRequest) ([]*reg.DownstreamTargetResponse, error) {
+
 	key := strings.Join(req.Request.ServiceName, "_") + "_" + req.Request.Partition
 	key = key + fmt.Sprintf("_%v", req.Request.ApiType)
 	uceo := upstream_cache.Get(key)
@@ -74,19 +77,7 @@ func (s *V2Registry) getFromUpstream(ctx context.Context, req *reg.UpstreamTarge
 		uce := uceo.(*upstream_cache_entry)
 		return uce.res, uce.err
 	}
-	var fsvc []string
-	for _, svc := range req.Request.ServiceName {
-		add := true
-		for _, no := range NO_UPSTREAM {
-			if svc == no {
-				add = false
-				break
-			}
-		}
-		if add {
-			fsvc = append(fsvc, svc)
-		}
-	}
+	req.Request.ServiceName = filter_for_upstream(req.Request.ServiceName)
 	nreq := *req.Request
 	wg := &sync.WaitGroup{}
 	var terr error
@@ -120,4 +111,27 @@ func (s *V2Registry) getFromUpstream(ctx context.Context, req *reg.UpstreamTarge
 	//	s.Printf("Requested data from %d upstream registries.\n", len(cls))
 	upstream_cache.Put(key, &upstream_cache_entry{err: terr, res: res})
 	return res, terr
+}
+
+func filter_for_upstream(servicenames []string) []string {
+	var nup []string
+	for _, np := range strings.Split(*no_upstream, ",") {
+		np = strings.Trim(np, " ")
+		nup = append(nup, np)
+	}
+	filter := append(NO_UPSTREAM, nup...)
+	var fsvc []string
+	for _, svc := range servicenames {
+		add := true
+		for _, no := range filter {
+			if svc == no {
+				add = false
+				break
+			}
+		}
+		if add {
+			fsvc = append(fsvc, svc)
+		}
+	}
+	return fsvc
 }
