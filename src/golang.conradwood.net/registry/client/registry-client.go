@@ -261,6 +261,7 @@ func WriteConf() error {
 	}
 	b := auth.ServiceMapToYaml(gomap)
 	b = append([]byte(`# created by registry-client
+# consider using objectauth service instead of this file
 `), b...)
 	err = utils.WriteFile(filename, b)
 	if err != nil {
