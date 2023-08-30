@@ -260,6 +260,8 @@ func WriteConf() error {
 		gomap[t.ServiceName] = svcid
 	}
 	b := auth.ServiceMapToYaml(gomap)
+	b = append([]byte(`# created by registry-client
+`), b...)
 	err = utils.WriteFile(filename, b)
 	if err != nil {
 		return fmt.Errorf("failed to write file \"%s\": %w", filename, err)
