@@ -18,6 +18,7 @@ import (
 // static variables for flag parser
 var (
 	write_list = flag.String("write_map", "", "if true write mapping service-name:serviceid to file in a go-like format")
+	write_conf = flag.String("write_yaml", "", "if true write mapping service-name:serviceid to file in a yaml goeasopy compatible format")
 	iponly     = flag.Bool("iponly", false, "only list ip addresses")
 	target     = flag.String("target", "", "attempt to connect to a service (with go-easyops.client.Connect())")
 	filter     string
@@ -37,6 +38,10 @@ func main() {
 	rclient = client.GetRegistryClient()
 	if *write_list != "" {
 		utils.Bail("failed to write list", WriteList())
+		os.Exit(0)
+	}
+	if *write_conf != "" {
+		utils.Bail("failed to write conf", WriteConf())
 		os.Exit(0)
 	}
 	if *missed {
@@ -209,6 +214,7 @@ func flagsFromRegistration(t *pb.Registration) string {
 }
 
 func WriteList() error {
+	filename := *write_list
 	lr := &pb.V2ListRequest{}
 	list, err := rclient.ListRegistrations(context.Background(), lr)
 	if err != nil {
@@ -233,10 +239,30 @@ func WriteList() error {
 		v := gomap[k]
 		s = s + fmt.Sprintf("   \"%s\":\"%s\",\n", k, v)
 	}
-	filename := *write_list
 	err = utils.WriteFile(filename, []byte(s))
 	if err != nil {
 		return err
+	}
+	fmt.Printf("Map written to %s\n", filename)
+	return nil
+}
+func WriteConf() error {
+	filename := *write_conf
+	lr := &pb.V2ListRequest{}
+	list, err := rclient.ListRegistrations(context.Background(), lr)
+	if err != nil {
+		return err
+	}
+	gomap := make(map[string]string)
+	for _, r := range list.Registrations {
+		t := r.Target
+		svcid := r.UserID
+		gomap[t.ServiceName] = svcid
+	}
+	b := auth.ServiceMapToYaml(gomap)
+	err = utils.WriteFile(filename, b)
+	if err != nil {
+		return fmt.Errorf("failed to write file \"%s\": %w", filename, err)
 	}
 	fmt.Printf("Map written to %s\n", filename)
 	return nil
