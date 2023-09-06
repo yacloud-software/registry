@@ -93,7 +93,7 @@ func (si *serviceInstance) Targetable() bool {
 	if si.isLocal {
 		return true
 	}
-	if !si.serviceReady {
+	if !si.serviceReady && si.IncludesApiType(reg.Apitype_status) {
 		return false
 	}
 	if si.isFallback || si.isRemote {
