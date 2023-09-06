@@ -48,7 +48,7 @@ var (
 		},
 		[]string{"servicename"},
 	)
-	verify_chan = make(chan *verifyWork, WORKERS)
+	verify_chan = make(chan *verifyWork, WORKERS*10)
 )
 
 func init() {
@@ -151,5 +151,10 @@ func setServiceCheckFailure(si *serviceInstance, newvalue int) {
 	healthzChecksCur.With(l).Set(float64(newvalue))
 }
 func TriggerVerifyStatus(si *serviceInstance) {
-	verify_chan <- &verifyWork{instance: si}
+	select {
+	case verify_chan <- &verifyWork{instance: si}:
+		//
+	default:
+		//
+	}
 }
