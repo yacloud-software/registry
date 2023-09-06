@@ -113,6 +113,11 @@ func (rv *V2Registry) verifyStatusWorker() {
 		h := &http.HTTP{}
 		url := fmt.Sprintf("https://%s:%d/internal/health", si.IP.ExposeAs(), reg.Port)
 		hr := h.Get(url)
+		if hr.Error() != nil && hr.HTTPCode() == 400 || hr.HTTPCode() == 404 {
+			xh := &http.HTTP{}
+			xurl := fmt.Sprintf("https://%s:%d/internal/healthz", si.IP.ExposeAs(), reg.Port)
+			hr = xh.Get(xurl)
+		}
 		if hr.Error() != nil {
 			if hr.HTTPCode() == 400 || hr.HTTPCode() == 404 {
 				url = fmt.Sprintf("https://%s:%d/internal/service-info/name", si.IP.ExposeAs(), reg.Port)
