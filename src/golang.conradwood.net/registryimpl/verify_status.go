@@ -111,7 +111,7 @@ func (rv *V2Registry) verifyStatusWorker() {
 		healthzChecks.With(l).Inc()
 		//		fmt.Printf("Checking %s:%d\n", si.IP.ExposeAs(), reg.Port)
 		h := &http.HTTP{}
-		url := fmt.Sprintf("https://%s:%d/internal/healthz", si.IP.ExposeAs(), reg.Port)
+		url := fmt.Sprintf("https://%s:%d/internal/health", si.IP.ExposeAs(), reg.Port)
 		hr := h.Get(url)
 		if hr.Error() != nil {
 			if hr.HTTPCode() == 400 || hr.HTTPCode() == 404 {
@@ -128,7 +128,7 @@ func (rv *V2Registry) verifyStatusWorker() {
 		}
 		b := string(hr.Body())
 		//	fmt.Printf("Body: \"%s\"\n", b)
-		if b == "OK" {
+		if b == "OK" || b == "READY" {
 			setServiceCheckFailure(si, 0)
 		} else {
 			setServiceCheckFailure(si, si.serviceCheckFailures+1)
