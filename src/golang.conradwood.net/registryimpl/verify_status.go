@@ -99,28 +99,32 @@ func (rv *V2Registry) verifyStatusWorker() {
 		if si == nil {
 			continue
 		}
-		reg := si.registeredAs
-		if reg == nil {
+		regas := si.registeredAs
+		if regas == nil {
+			continue
+		}
+		if !si.IncludesApiType(reg.Apitype_status) {
+			// if not, ignore ig
 			continue
 		}
 		if time.Since(si.lastServiceCheck) < *keepAlive {
 			continue
 		}
 		si.lastServiceCheck = time.Now()
-		l := prometheus.Labels{"servicename": reg.ServiceName}
+		l := prometheus.Labels{"servicename": regas.ServiceName}
 		healthzChecks.With(l).Inc()
 		//		fmt.Printf("Checking %s:%d\n", si.IP.ExposeAs(), reg.Port)
 		h := &http.HTTP{}
-		url := fmt.Sprintf("https://%s:%d/internal/health", si.IP.ExposeAs(), reg.Port)
+		url := fmt.Sprintf("https://%s:%d/internal/health", si.IP.ExposeAs(), regas.Port)
 		hr := h.Get(url)
 		if hr.Error() != nil && hr.HTTPCode() == 400 || hr.HTTPCode() == 404 {
 			xh := &http.HTTP{}
-			xurl := fmt.Sprintf("https://%s:%d/internal/healthz", si.IP.ExposeAs(), reg.Port)
+			xurl := fmt.Sprintf("https://%s:%d/internal/healthz", si.IP.ExposeAs(), regas.Port)
 			hr = xh.Get(xurl)
 		}
 		if hr.Error() != nil {
 			if hr.HTTPCode() == 400 || hr.HTTPCode() == 404 {
-				url = fmt.Sprintf("https://%s:%d/internal/service-info/name", si.IP.ExposeAs(), reg.Port)
+				url = fmt.Sprintf("https://%s:%d/internal/service-info/name", si.IP.ExposeAs(), regas.Port)
 				hr = h.Get(url)
 			}
 			if hr.Error() != nil {
