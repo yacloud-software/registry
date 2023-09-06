@@ -219,6 +219,7 @@ func (s *V2Registry) V2RegisterService(ctx context.Context, req *reg.RegisterSer
 	if isnew {
 		s.promUpdate()
 		s.callNewServiceListener(ctx, si)
+		TriggerVerifyStatus(si)
 	}
 	res := &reg.RegisterServiceResponse{}
 	return res, nil

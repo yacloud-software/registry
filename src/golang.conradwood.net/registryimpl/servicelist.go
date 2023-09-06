@@ -45,6 +45,7 @@ type serviceInstance struct {
 	deregistered         bool
 	didQueryAutodeployer bool
 	serviceCheckFailures int
+	serviceReady         bool // set by "verify status", based on service health exposed http value
 	lastServiceCheck     time.Time
 }
 
@@ -91,6 +92,9 @@ func (si *serviceInstance) ServiceName() string {
 func (si *serviceInstance) Targetable() bool {
 	if si.isLocal {
 		return true
+	}
+	if !si.serviceReady {
+		return false
 	}
 	if si.isFallback || si.isRemote {
 		// serve only if we have zero non-fall back ones available

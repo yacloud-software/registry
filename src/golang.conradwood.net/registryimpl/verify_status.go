@@ -129,9 +129,9 @@ func (rv *V2Registry) verifyStatusWorker() {
 		b := string(hr.Body())
 		//	fmt.Printf("Body: \"%s\"\n", b)
 		if b == "OK" || b == "READY" {
-			setServiceCheckFailure(si, 0)
+			si.serviceReady = true
 		} else {
-			setServiceCheckFailure(si, si.serviceCheckFailures+1)
+			si.serviceReady = false
 		}
 		si.lastServiceCheck = time.Now()
 	}
@@ -144,4 +144,7 @@ func setServiceCheckFailure(si *serviceInstance, newvalue int) {
 		"serviceinstance": fmt.Sprintf("%s:%d", si.IP.ExposeAs(), reg.Port),
 	}
 	healthzChecksCur.With(l).Set(float64(newvalue))
+}
+func TriggerVerifyStatus(si *serviceInstance) {
+	verify_chan <- &verifyWork{instance: si}
 }
