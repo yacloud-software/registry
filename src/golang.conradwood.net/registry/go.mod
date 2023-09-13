@@ -7,7 +7,7 @@ replace golang.conradwood.net/registryimpl => ../registryimpl
 require (
 	golang.conradwood.net/apis/common v1.1.2503
 	golang.conradwood.net/apis/registry v1.1.2503
-	golang.conradwood.net/go-easyops v0.1.19878
+	golang.conradwood.net/go-easyops v0.1.20106
 	golang.conradwood.net/registryimpl v0.0.0-00010101000000-000000000000
 	google.golang.org/grpc v1.57.0
 )
@@ -34,7 +34,6 @@ require (
 	golang.conradwood.net/apis/htmlserver v1.1.2491 // indirect
 	golang.conradwood.net/apis/objectstore v1.1.2503 // indirect
 	golang.conradwood.net/apis/promconfig v1.1.2491 // indirect
-	golang.conradwood.net/apis/rpcinterceptor v1.1.2495 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
