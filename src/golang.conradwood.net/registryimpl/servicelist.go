@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	start_ready         = flag.Bool("assume_service_is_ready", false, "if true assume service is ready as soon as it registers,otherwise do an http call for /health to it first")
 	do_dump_servicelist = flag.Bool("dump_service_list", false, "if true, dump the entire service list sometimes. lots of debug")
 	targetable_timeout  = flag.Int("refresh_timeout", 60, "timeout in `seconds` after which a registration becomes stale and will not be offered as target any more")
 	instancesequence    = uint64(1)
@@ -335,6 +336,7 @@ func (s *ServiceList) Registration(ctx context.Context, req *reg.RegisterService
 	}
 	s.debugf(req, "Refreshed processid (%s) - new service instance\n", req.ProcessID)
 	si = &serviceInstance{list: s, pid: req.Pid, sequencenumber: sequence(), refreshed: time.Now()}
+	si.serviceReady = *start_ready
 	si.registeredAs = req
 	si.IP = ip
 	s.instances = append(s.instances, si)
