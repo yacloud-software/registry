@@ -7,7 +7,7 @@ replace golang.conradwood.net/registryimpl => ../registryimpl
 require (
 	golang.conradwood.net/apis/common v1.1.2503
 	golang.conradwood.net/apis/registry v1.1.2503
-	golang.conradwood.net/go-easyops v0.1.20683
+	golang.conradwood.net/go-easyops v0.1.20970
 	golang.conradwood.net/registryimpl v0.0.0-00010101000000-000000000000
 	google.golang.org/grpc v1.57.0
 )
