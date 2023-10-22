@@ -99,7 +99,7 @@ func main() {
 
 	sd := server.NewServerDef()
 	sd.NoAuth = true
-	sd.Port = *tlsport
+	sd.SetPort(*tlsport)
 	sd.RegisterService = false
 	sd.DeployPath = deployPath
 	sd.Register = server.Register(
