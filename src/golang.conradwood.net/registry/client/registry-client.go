@@ -25,6 +25,7 @@ var (
 	rclient    pb.RegistryClient
 	long       = flag.Bool("long", false, "long output")
 	missed     = flag.Bool("missed", false, "list missed lookups")
+	monitor    = flag.Bool("monitor", false, "if true monitor target for changes, print out connections regularly")
 )
 
 type Apitypes []pb.Apitype
@@ -36,6 +37,10 @@ func main() {
 		filter = fs[0]
 	}
 	rclient = client.GetRegistryClient()
+	if *monitor {
+		utils.Bail("failed to monitor", Monitor())
+		os.Exit(0)
+	}
 	if *write_list != "" {
 		utils.Bail("failed to write list", WriteList())
 		os.Exit(0)
@@ -269,4 +274,23 @@ func WriteConf() error {
 	}
 	fmt.Printf("Map written to %s\n", filename)
 	return nil
+}
+func Monitor() error {
+	tg := *target
+	if tg == "" {
+		return fmt.Errorf("missing target")
+	}
+	fal, err := client.ConnectNoBalance(tg)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Got fancy addresslist for \"%s\"\n", tg)
+	for {
+		list := fal.AllAddresses()
+		fmt.Printf("Currently got %d addresses:\n", len(list))
+		for _, fa := range list {
+			fmt.Printf("  %s\n", fa)
+		}
+		time.Sleep(time.Duration(2) * time.Second)
+	}
 }

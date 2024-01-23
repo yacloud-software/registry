@@ -98,16 +98,16 @@ func main() {
 	go RegisterNonTLS()
 
 	sd := server.NewServerDef()
-	sd.NoAuth = true
+	sd.SetNoAuth()
 	sd.SetPort(*tlsport)
-	sd.RegisterService = false
-	sd.DeployPath = deployPath
-	sd.Register = server.Register(
+	sd.DontRegister()
+	//	sd.DeployPath = deployPath
+	sd.SetRegister(server.Register(
 		func(server *grpc.Server) error {
 			pb.RegisterRegistryServer(server, v2server) // created by proto
 			return nil
 		},
-	)
+	))
 	fmt.Printf("Starting Registry Server...\n")
 	err := server.ServerStartup(sd)
 	fmt.Printf("Failed to start server: %s\n", err)
@@ -187,7 +187,6 @@ func (regService *RegistryService) FindInstanceById(id int) *serviceInstance {
 	return nil
 }
 
-//
 func (regService *RegistryService) FindServices(sd *pb.ServiceDescription) []*serviceEntry {
 	var res []*serviceEntry
 	for e := services.Front(); e != nil; e = e.Next() {
