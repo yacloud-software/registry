@@ -4,9 +4,9 @@ go 1.18
 
 require (
 	github.com/golang/protobuf v1.5.3
-	golang.conradwood.net/apis/auth v1.1.2787
+	golang.conradwood.net/apis/auth v1.1.2788
 	golang.conradwood.net/apis/autodeployer v1.1.2503
-	golang.conradwood.net/apis/common v1.1.2787
+	golang.conradwood.net/apis/common v1.1.2788
 	golang.org/x/net v0.20.0
 	google.golang.org/grpc v1.60.1
 )
