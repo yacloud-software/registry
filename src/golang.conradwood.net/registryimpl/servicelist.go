@@ -349,12 +349,12 @@ func (s *ServiceList) Registration(ctx context.Context, req *reg.RegisterService
 	}
 	s.debugf(req, "Refreshed processid (%s) - new service instance\n", req.ProcessID)
 	si = &serviceInstance{list: s, pid: req.Pid, sequencenumber: sequence(), refreshed: time.Now()}
+	si.registeredAs = req
 	if *start_ready {
 		si.setHealth(common.Health_READY)
 	} else {
 		si.setHealth(common.Health_STARTING)
 	}
-	si.registeredAs = req
 	si.IP = ip
 	s.instances = append(s.instances, si)
 	if sin != nil {
