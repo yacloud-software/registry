@@ -50,7 +50,7 @@ type serviceInstance struct {
 	didQueryAutodeployer bool
 	serviceCheckFailures int
 	//	serviceReady         bool // set by "verify status", based on service health exposed http value
-	health           common.Health
+	cur_health       common.Health
 	lastServiceCheck time.Time
 }
 
@@ -59,7 +59,10 @@ func (si *serviceInstance) String() string {
 	if si != nil {
 		if si.registeredAs != nil {
 			x = si.registeredAs.ServiceName
+		} else if si.createdAs != nil && si.createdAs.DeployInfo != nil {
+			x = "(" + si.createdAs.DeployInfo.Binary + ")"
 		}
+
 	}
 	return fmt.Sprintf("[%s:seq=%d,ip=%s,pid=%d]", x, si.sequencenumber, si.IP.String(), si.pid)
 }
@@ -347,9 +350,9 @@ func (s *ServiceList) Registration(ctx context.Context, req *reg.RegisterService
 	s.debugf(req, "Refreshed processid (%s) - new service instance\n", req.ProcessID)
 	si = &serviceInstance{list: s, pid: req.Pid, sequencenumber: sequence(), refreshed: time.Now()}
 	if *start_ready {
-		si.health = common.Health_READY
+		si.setHealth(common.Health_READY)
 	} else {
-		si.health = common.Health_STARTING
+		si.setHealth(common.Health_STARTING)
 	}
 	si.registeredAs = req
 	si.IP = ip

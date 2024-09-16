@@ -74,7 +74,7 @@ type V2Registry struct {
 }
 
 func (s *V2Registry) ListRegistrations(ctx context.Context, req *reg.V2ListRequest) (*reg.RegistrationList, error) {
-	s.Printf("listing all registrations...\n")
+	//	s.Printf("listing all registrations...\n")
 	res := &reg.RegistrationList{}
 	for _, si := range s.serviceList.Instances() {
 		if req.NameMatch != "" {
@@ -210,7 +210,7 @@ func (s *V2Registry) V2RegisterService(ctx context.Context, req *reg.RegisterSer
 	}
 	if si != nil {
 		if req.Health != common.Health_UNKNOWN_HEALTH {
-			si.health = req.Health
+			si.setHealth(req.Health)
 		}
 	}
 	debugf(req, "RegisterService processid %s, isnew: %v\n", req.ProcessID, isnew)

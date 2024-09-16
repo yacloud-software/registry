@@ -147,13 +147,22 @@ func (rv *V2Registry) verifyStatusWorker() {
 		if !found {
 			fmt.Printf("WARNING: Service %s reported unsupported health \"%s\"\n", si.String(), b)
 		} else {
-			si.health = common.Health(health)
+			si.setHealth(common.Health(health))
 		}
 		si.lastServiceCheck = time.Now()
 	}
 }
+func (si *serviceInstance) setHealth(h common.Health) {
+	if h != si.cur_health {
+		fmt.Printf("Service %s changed health from %v to %v\n", si.String(), si.cur_health, h)
+	}
+	si.cur_health = h
+}
+func (si *serviceInstance) getHealth() common.Health {
+	return si.cur_health
+}
 func (si *serviceInstance) serviceReady() bool {
-	if si.health == common.Health_READY {
+	if si.getHealth() == common.Health_READY {
 		return true
 	}
 	return false
