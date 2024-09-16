@@ -4,14 +4,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"golang.conradwood.net/apis/common"
-	reg "golang.conradwood.net/apis/registry"
-	"golang.conradwood.net/go-easyops/errors"
-	"golang.conradwood.net/go-easyops/utils"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.conradwood.net/apis/common"
+	reg "golang.conradwood.net/apis/registry"
+	"golang.conradwood.net/go-easyops/errors"
+	"golang.conradwood.net/go-easyops/utils"
 )
 
 var (
@@ -206,6 +207,11 @@ func (s *V2Registry) V2RegisterService(ctx context.Context, req *reg.RegisterSer
 	if err != nil {
 		fmt.Printf("Failed to register: %s\n", utils.ErrorString(err))
 		return nil, err
+	}
+	if si != nil {
+		if req.Health != common.Health_UNKNOWN_HEALTH {
+			si.health = req.Health
+		}
 	}
 	debugf(req, "RegisterService processid %s, isnew: %v\n", req.ProcessID, isnew)
 	if si.createdAs == nil && !si.didQueryAutodeployer {

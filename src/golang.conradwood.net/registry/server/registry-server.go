@@ -25,6 +25,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
+	"os"
+	"time"
+
 	"golang.conradwood.net/apis/common"
 	pb "golang.conradwood.net/apis/registry"
 	"golang.conradwood.net/go-easyops/errors"
@@ -33,9 +37,6 @@ import (
 	"golang.conradwood.net/go-easyops/utils"
 	"golang.conradwood.net/registryimpl"
 	"google.golang.org/grpc"
-	"net"
-	"os"
-	"time"
 )
 
 // static variables for flag parser

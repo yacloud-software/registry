@@ -7,10 +7,12 @@ to answer altogether
 import (
 	"flag"
 	"fmt"
+	"time"
+
+	"golang.conradwood.net/apis/common"
 	reg "golang.conradwood.net/apis/registry"
 	"golang.conradwood.net/go-easyops/http"
 	"golang.conradwood.net/go-easyops/prometheus"
-	"time"
 )
 
 const (
@@ -136,14 +138,25 @@ func (rv *V2Registry) verifyStatusWorker() {
 			continue
 		}
 		b := string(hr.Body())
+		if b == "OK" { // very old client
+			fmt.Printf("WARNING: Service %s reported very old style \"OK\"\n", si.String())
+			b = "READY"
+		}
 		//	fmt.Printf("Body: \"%s\"\n", b)
-		if b == "OK" || b == "READY" {
-			si.serviceReady = true
+		health, found := common.Health_value[b]
+		if !found {
+			fmt.Printf("WARNING: Service %s reported unsupported health \"%s\"\n", si.String(), b)
 		} else {
-			si.serviceReady = false
+			si.health = common.Health(health)
 		}
 		si.lastServiceCheck = time.Now()
 	}
+}
+func (si *serviceInstance) serviceReady() bool {
+	if si.health == common.Health_READY {
+		return true
+	}
+	return false
 }
 func setServiceCheckFailure(si *serviceInstance, newvalue int) {
 	si.serviceCheckFailures = newvalue
