@@ -182,6 +182,7 @@ message RegisterServiceRequest {
   RoutingInfo RoutingInfo = 5;
   uint64 Pid = 6; // process pid. Posix is int32, but some vagueness of signedness, thus safe is uint64
   string UserID=7; // the "userid" mapped from auth (maybe "", e.g. if the auth-service itself registers)
+  common.Health Health=8; // optional. update the health status
 }
 
 // nothing here really.
@@ -195,6 +196,7 @@ message HeartBeatRequest {
    * the client is supposed to call this regularly
    */
   string ProcessID = 1;
+  common.Health Health=2; // optional, if set updates process health
 }
 message DeregisterServiceRequest {
   /* all registrations of a process must share the same processid (startupid ass assigned by autodeployer)
@@ -297,9 +299,9 @@ service Registry {
   rpc InformProcessShutdown(ProcessShutdownRequest) returns (EmptyResponse);
   // autodeployer will a service before handing over control to userspace (using processid)
   rpc V2CreateService(CreateServiceRequest) returns (common.Void);
-  // new style registration
+  // new style registration. this is called periodically by the client
   rpc V2RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse);
-  // new style 'refresh' (keep-alive)
+  // OBSOLETE new style 'refresh' (keep-alive)
   rpc V2HeartBeat(HeartBeatRequest) returns (common.Void);
   // new style 'deregister' service. This is based on processID. all services/ports for
   // the given processid will be deregistered.
