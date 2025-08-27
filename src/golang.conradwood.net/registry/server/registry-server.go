@@ -92,6 +92,7 @@ func (si *serviceInstance) toString() string {
 }
 func main() {
 	flag.Parse() // parse stuff. see "var" section above
+   server.SetHealth(common.Health_STARTING)
 	myid = "V1-" + utils.RandomString(96)
 
 	v2server = registryimpl.New(*upstream)
@@ -101,6 +102,7 @@ func main() {
 	sd := server.NewServerDef()
 	sd.SetNoAuth()
 	sd.SetPort(*tlsport)
+sd.SetOnStartupCallback(startup)
 	sd.DontRegister()
 	//	sd.DeployPath = deployPath
 	sd.SetRegister(server.Register(
@@ -115,6 +117,10 @@ func main() {
 	os.Exit(10)
 
 }
+func startup() {
+	server.SetHealth(common.Health_READY)
+}
+
 
 func RegisterNonTLS() {
 	listenAddr := fmt.Sprintf(":%d", *port)
@@ -293,3 +299,5 @@ func (r RegistryService) Printf(format string, args ...interface{}) {
 func (r *RegistryService) RequestForTarget(ctx context.Context, req *pb.UpstreamTargetRequest) (*pb.DownstreamTargetResponse, error) {
 	return nil, errors.NotImplemented(ctx, "registryv1")
 }
+
+
