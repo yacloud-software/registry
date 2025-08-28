@@ -6,9 +6,9 @@ toolchain go1.23.3
 
 require (
 	github.com/golang/protobuf v1.5.4
-	golang.conradwood.net/apis/auth v1.1.4025
+	golang.conradwood.net/apis/auth v1.1.4026
 	golang.conradwood.net/apis/autodeployer v1.1.4021
-	golang.conradwood.net/apis/common v1.1.4025
+	golang.conradwood.net/apis/common v1.1.4026
 	golang.org/x/net v0.42.0
 	google.golang.org/grpc v1.74.2
 )
