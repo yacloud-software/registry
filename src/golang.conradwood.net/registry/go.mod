@@ -7,7 +7,7 @@ toolchain go1.23.3
 replace golang.conradwood.net/registryimpl => ../registryimpl
 
 require (
-	golang.conradwood.net/apis/common v1.1.4067
+	golang.conradwood.net/apis/common v1.1.4068
 	golang.conradwood.net/apis/registry v1.1.4021
 	golang.conradwood.net/go-easyops v0.1.37697
 	golang.conradwood.net/registryimpl v0.0.0-00010101000000-000000000000
@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
-	golang.conradwood.net/apis/auth v1.1.4067 // indirect
+	golang.conradwood.net/apis/auth v1.1.4068 // indirect
 	golang.conradwood.net/apis/autodeployer v1.1.4021 // indirect
 	golang.conradwood.net/apis/banking v1.1.4021 // indirect
 	golang.conradwood.net/apis/certmanager v1.1.4021 // indirect
@@ -35,7 +35,7 @@ require (
 	golang.conradwood.net/apis/errorlogger v1.1.4021 // indirect
 	golang.conradwood.net/apis/framework v1.1.4021 // indirect
 	golang.conradwood.net/apis/getestservice v1.1.4021 // indirect
-	golang.conradwood.net/apis/goeasyops v1.1.4067 // indirect
+	golang.conradwood.net/apis/goeasyops v1.1.4068 // indirect
 	golang.conradwood.net/apis/grafanadata v1.1.4021 // indirect
 	golang.conradwood.net/apis/h2gproxy v1.1.4021 // indirect
 	golang.conradwood.net/apis/htmlserver v1.1.4021 // indirect
@@ -47,7 +47,7 @@ require (
 	golang.yacloud.eu/apis/autodeployer2 v1.1.4021 // indirect
 	golang.yacloud.eu/apis/faultindicator v1.1.4021 // indirect
 	golang.yacloud.eu/apis/fscache v1.1.4021 // indirect
-	golang.yacloud.eu/apis/session v1.1.4067 // indirect
+	golang.yacloud.eu/apis/session v1.1.4068 // indirect
 	golang.yacloud.eu/apis/unixipc v1.1.4021 // indirect
 	golang.yacloud.eu/apis/urlcacher v1.1.4021 // indirect
 	golang.yacloud.eu/unixipc v0.1.31725 // indirect
