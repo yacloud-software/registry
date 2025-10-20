@@ -3,20 +3,22 @@ package registryimpl
 import (
 	"context"
 	"fmt"
+
 	//	"golang.conradwood.net/apis/common"
 	"flag"
-	reg "golang.conradwood.net/apis/registry"
-	"golang.conradwood.net/go-easyops/cache"
-	"golang.conradwood.net/go-easyops/client"
 	"strings"
 	"sync"
 	"time"
+
+	reg "golang.conradwood.net/apis/registry"
+	"golang.conradwood.net/go-easyops/cache"
+	"golang.conradwood.net/go-easyops/client"
 )
 
 var (
 	upstream_cache  = cache.New("upstream_cache", time.Duration(15)*time.Second, 1000)
 	NO_UPSTREAM     = []string{"registry.Registry"}
-	no_upstream     = flag.String("no_upstream", "", "comma delimited list of services never to resolve via upstream regi1stry")
+	no_upstream     = flag.String("no_upstream", "", "comma delimited list of services never to resolve via upstream registry")
 	upstreamClients = make(map[string]reg.RegistryClient)
 	regLock         sync.Mutex
 	connectingip    string
